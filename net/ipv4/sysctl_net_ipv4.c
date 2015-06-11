@@ -25,6 +25,7 @@
 #include <net/inet_frag.h>
 #include <net/ping.h>
 #include <net/tcp_memcontrol.h>
+#include <net/ecmp.h>
 
 static int zero;
 static int one = 1;
@@ -919,6 +920,7 @@ static __net_exit void ipv4_sysctl_exit_net(struct net *net)
 {
 	struct ctl_table *table;
 
+    ecmp_cleanup();
 	kfree(net->ipv4.sysctl_local_reserved_ports);
 	table = net->ipv4.ipv4_hdr->ctl_table_arg;
 	unregister_net_sysctl_table(net->ipv4.ipv4_hdr);
@@ -943,6 +945,8 @@ static __init int sysctl_ipv4_init(void)
 		return -ENOMEM;
 	}
 
+    ecmp_init();
+    
 	return 0;
 }
 

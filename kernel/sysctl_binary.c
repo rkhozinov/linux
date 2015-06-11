@@ -1,6 +1,5 @@
 #include <linux/stat.h>
 #include <linux/sysctl.h>
-#include "../fs/xfs/xfs_sysctl.h"
 #include <linux/sunrpc/debug.h>
 #include <linux/string.h>
 #include <linux/syscalls.h>
@@ -415,6 +414,7 @@ static const struct bin_table bin_net_ipv4_table[] = {
 	/* NET_IPV4_IPFRAG_MAX_DIST "ipfrag_max_dist" no longer used */
 
 	{ CTL_INT,	2088 /* NET_IPQ_QMAX */,		"ip_queue_maxlen" },
+	{ CTL_INT,  NET_IPV4_ECMP_ALGS,             "ecmp_alg" },
 
 	/* NET_TCP_DEFAULT_WIN_SCALE unused */
 	/* NET_TCP_BIC_BETA unused */

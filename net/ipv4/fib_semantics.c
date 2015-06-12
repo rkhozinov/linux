@@ -42,8 +42,9 @@
 #include <net/ip_fib.h>
 #include <net/netlink.h>
 #include <net/nexthop.h>
-
-#include "fib_lookup.h"
+#ifdef CONFIG_IP_ROUTE_MULTIPATH
+#include <net/ecmp.h>
+#endif /* CONFIG_IP_ROUTE_MULTIPATH */
 
 static DEFINE_SPINLOCK(fib_info_lock);
 static struct hlist_head *fib_info_hash;
@@ -1281,56 +1282,43 @@ int fib_sync_up(struct net_device *dev)
 	return ret;
 }
 
-/*
- * The algorithm is suboptimal, but it provides really
- * fair weighted route distribution.
- */
-void fib_select_multipath(struct fib_result *res)
+
+void fib_select_multipath(struct fib_result *res, struct flowi4 * flow)
 {
 	struct fib_info *fi = res->fi;
-	int w;
+    	u8 best_link;
+    	u32 * hash;
+    	spin_lock_bh(&fib_multipath_lock);
+	extern u8 current_ecmp_mode;
+	switch(current_ecmp_mode){
 
-	spin_lock_bh(&fib_multipath_lock);
-	if (fi->fib_power <= 0) {
-		int power = 0;
-		change_nexthops(fi) {
-			if (!(nexthop_nh->nh_flags & RTNH_F_DEAD)) {
-				power += nexthop_nh->nh_weight;
-				nexthop_nh->nh_power = nexthop_nh->nh_weight;
-			}
-		} endfor_nexthops(fi);
-		fi->fib_power = power;
-		if (power <= 0) {
-			spin_unlock_bh(&fib_multipath_lock);
-			/* Race condition: route has just become dead. */
-			res->nh_sel = 0;
-			return;
-		}
+	case ECMP_DISABLED:
+	    best_link = 0;
+	    break;
+
+	case ECMP_HASH_THRESHOLD:
+	    *hash = ecmp_hash(flow);
+	    best_link = ecmp_hash_threshold(hash, fi);
+	    break;
+
+	case ECMP_HRW:
+	    *hash = ecmp_hash(flow);
+	    best_link = ecmp_hrw(hash, fi);
+	    break;
+
+	case ECMP_MODULO_N:
+            *hash = ecmp_hash(flow);
+            best_link = ecmp_modulo_n(hash, fi);
+        break;
+
+	case ECMP_DEFAULT:
+
+	default:
+	    best_link = ecmp_default(fi);
+	    break;
 	}
 
-
-	/* w should be random number [0..fi->fib_power-1],
-	 * it is pretty bad approximation.
-	 */
-
-	w = jiffies % fi->fib_power;
-
-	change_nexthops(fi) {
-		if (!(nexthop_nh->nh_flags & RTNH_F_DEAD) &&
-		    nexthop_nh->nh_power) {
-			w -= nexthop_nh->nh_power;
-			if (w <= 0) {
-				nexthop_nh->nh_power--;
-				fi->fib_power--;
-				res->nh_sel = nhsel;
-				spin_unlock_bh(&fib_multipath_lock);
-				return;
-			}
-		}
-	} endfor_nexthops(fi);
-
-	/* Race condition: route has just become dead. */
-	res->nh_sel = 0;
+	res->nh_sel = best_link;
 	spin_unlock_bh(&fib_multipath_lock);
 }
 #endif

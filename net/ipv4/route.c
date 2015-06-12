@@ -93,6 +93,8 @@
 #include <net/dst.h>
 #include <net/net_namespace.h>
 #include <net/protocol.h>
+#include <net/tcp.h>
+#include <net/udp.h>
 #include <net/ip.h>
 #include <net/route.h>
 #include <net/inetpeer.h>
@@ -109,6 +111,9 @@
 #include <linux/kmemleak.h>
 #endif
 #include <net/secure_seq.h>
+#ifdef CONFIG_IP_ROUTE_MULTIPATH
+//#include <net/ecmp.h>
+#endif
 
 #define RT_FL_TOS(oldflp4) \
 	((oldflp4)->flowi4_tos & (IPTOS_RT_MASK | RTO_ONLINK))
@@ -516,7 +521,53 @@ static void __build_flow_key(struct flowi4 *fl4, const struct sock *sk,
 			   RT_SCOPE_UNIVERSE, prot,
 			   flow_flags,
 			   iph->daddr, iph->saddr, 0, 0);
+
+#ifdef CONFIG_IP_ROUTE_MULTIPATH
+    add_flow_details(fl4,iph);
+#endif
 }
+
+#ifdef CONFIG_IP_ROUTE_MULTIPATH
+/*
+ * Fills sport and dport for an IPv4 flow
+ */
+static void add_flow_details(struct flowi4 *flow, struct iphdr *ip_header)
+{
+    // http://stackoverflow.com/questions/12073963/\
+    // how-to-access-data-payload-from-tcphdr-sk-buff-struct-on-debian-64-bits
+
+    // http://stackoverflow.com/questions/16528868/c-linux-kernel-module-tcp-header
+
+    struct tcphdr * tcp_header;
+    struct udphdr * udp_header;
+
+    flow->flowi4_proto = ip_header->protocol;
+    switch (flow->flowi4_proto) {
+        case IPPROTO_TCP:
+
+            /* https://jve.linuxwall.info/ressources/code/nfqueue_recorder.c
+             *
+             * Calculate the size of the IP Header. iph->ihl contains the number of 32 bit
+             *   words that represent the header size. Therfore to get the number of bytes
+             *   multiple this number by 4
+             *   struct tcphdr *tcp = ((struct tcphdr *) (nf_packet + (iph->ihl << 2)));
+             *   struct udphdr *udp = ((struct udphdr *) (ip_header + (iph->ihl << 2)));
+             */
+            tcp_header = (struct tcphdr *)((u32 *)ip_header + ip_header->ihl);
+            flow->fl4_sport = tcp_header->source;
+            flow->fl4_dport = tcp_header->dest;
+            break;
+        case IPPROTO_UDP:
+            udp_header = (struct udphdr *)((u32 *)ip_header + ip_header->ihl);
+            flow->fl4_sport = udp_header->source;
+            flow->fl4_dport = udp_header->dest;
+            break;
+        default:
+            flow->fl4_sport = 0;
+            flow->fl4_dport = 0;
+            break;
+}
+#endif
 
 static void build_skb_flow_key(struct flowi4 *fl4, const struct sk_buff *skb,
 			       const struct sock *sk)
@@ -1628,7 +1679,7 @@ static int ip_mkroute_input(struct sk_buff *skb,
 {
 #ifdef CONFIG_IP_ROUTE_MULTIPATH
 	if (res->fi && res->fi->fib_nhs > 1)
-		fib_select_multipath(res);
+		fib_select_multipath(res, fl4);
 #endif
 
 	/* create a routing cache entry */
@@ -2158,7 +2209,7 @@ struct rtable *__ip_route_output_key(struct net *net, struct flowi4 *fl4)
 
 #ifdef CONFIG_IP_ROUTE_MULTIPATH
 	if (res.fi->fib_nhs > 1 && fl4->flowi4_oif == 0)
-		fib_select_multipath(&res);
+		fib_select_multipath(&res, fl4);
 	else
 #endif
 	if (!res.prefixlen &&

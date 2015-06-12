@@ -57,7 +57,7 @@ static inline int proc_ecmp_alg(struct ctl_table *ctl, int write,
 }
 
 
-static inline u32 ecmp_hash(const struct flowi4 *flow)
+u32 ecmp_hash(const struct flowi4 *flow)
 {
 
     /* __be16  16-bit value in big-endian byte order
@@ -147,12 +147,12 @@ static struct ctl_table net_ipv4_ecmp_alg [] = {
 };
 
 
-static inline u8 ecmp_hash_threshold(u32 * hash, struct fib_info *fi)
+u8 ecmp_hash_threshold(u32 * hash, struct fib_info *fi)
 {
     return (u8)(*hash / (U32_MAX / fi->fib_nhs));
 }
 
-static inline u8 ecmp_hrw(u32 * hash, struct fib_info * fi)
+u8 ecmp_hrw(u32 * hash, struct fib_info * fi)
 {
 
     u32 best_weight, weight;
@@ -160,10 +160,10 @@ static inline u8 ecmp_hrw(u32 * hash, struct fib_info * fi)
     u8 link = best_link;
 
     /* setup the best weight for the first link */
-    best_weight = hash_2words(*hash, link, 0);
+    best_weight = jhash_2words(*hash, link, 0);
 
     for(link = 1; link < fi->fib_nhs; link++){
-        weight = hash_2words(*hash, link, 0);
+        weight = jhash_2words(*hash, link, 0);
         if (weight > best_weight){
             best_link = link;
             best_weight = weight;
@@ -173,12 +173,12 @@ static inline u8 ecmp_hrw(u32 * hash, struct fib_info * fi)
     return best_link;
 }
 
-static inline u8 ecmp_modulo_n(u32 * hash, struct fib_info *fi)
+u8 ecmp_modulo_n(u32 * hash, struct fib_info *fi)
 {
     return (*hash % fi->fib_nhs);
 }
 
-static inline u8 ecmp_default(struct fib_info *fi)
+u8 ecmp_default(struct fib_info *fi)
 {
     u8 w = 0;
     u8 nhsel;

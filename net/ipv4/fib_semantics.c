@@ -1283,7 +1283,7 @@ int fib_sync_up(struct net_device *dev)
 }
 
 
-void fib_select_multipath(struct fib_result *res, struct flowi4 * flow)
+void fib_select_multipath(struct fib_result *res, const struct flowi4 * flow)
 {
 	struct fib_info *fi = res->fi;
     	u8 best_link;

@@ -112,7 +112,7 @@
 #endif
 #include <net/secure_seq.h>
 #ifdef CONFIG_IP_ROUTE_MULTIPATH
-#include <net/ecmp.h>
+//#include <net/ecmp.h>
 #endif
 
 #define RT_FL_TOS(oldflp4) \
@@ -531,8 +531,8 @@ static void __build_flow_key(struct flowi4 *fl4, const struct sock *sk,
 /*
  * Fills sport and dport for an IPv4 flow
  */
-static void add_flow_details(struct flowi4 *flow, struct iphdr *ip_header){
-
+static void add_flow_details(struct flowi4 *flow, struct iphdr *ip_header)
+{
     // http://stackoverflow.com/questions/12073963/\
     // how-to-access-data-payload-from-tcphdr-sk-buff-struct-on-debian-64-bits
 

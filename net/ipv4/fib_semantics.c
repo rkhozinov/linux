@@ -42,7 +42,9 @@
 #include <net/ip_fib.h>
 #include <net/netlink.h>
 #include <net/nexthop.h>
+#ifdef CONFIG_IP_ROUTE_MULTIPATH
 #include <net/ecmp.h>
+#endif /* CONFIG_IP_ROUTE_MULTIPATH */
 
 static DEFINE_SPINLOCK(fib_info_lock);
 static struct hlist_head *fib_info_hash;
@@ -1284,10 +1286,10 @@ int fib_sync_up(struct net_device *dev)
 void fib_select_multipath(struct fib_result *res, struct flowi4 * flow)
 {
 	struct fib_info *fi = res->fi;
-    u8 best_link;
-    u32 hash;
-    spin_lock_bh(&fib_multipath_lock);
-
+    	u8 best_link;
+    	u32 * hash;
+    	spin_lock_bh(&fib_multipath_lock);
+	extern u8 current_ecmp_mode;
 	switch(current_ecmp_mode){
 
 	case ECMP_DISABLED:
@@ -1304,9 +1306,9 @@ void fib_select_multipath(struct fib_result *res, struct flowi4 * flow)
 	    best_link = ecmp_hrw(hash, fi);
 	    break;
 
-    case ECMP_MODULO_N:
-        *hash = ecmp_hash(flow);
-        best_link = ecmp_modulo_n(hash, fi);
+	case ECMP_MODULO_N:
+            *hash = ecmp_hash(flow);
+            best_link = ecmp_modulo_n(hash, fi);
         break;
 
 	case ECMP_DEFAULT:

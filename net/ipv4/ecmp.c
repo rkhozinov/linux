@@ -1,13 +1,13 @@
+#include <net/ecmp.h>
 #include <linux/string.h>
 #include <linux/in.h>
 #include <linux/jhash.h>
 #include <linux/sysctl.h>
 #include <linux/jiffies.h>
 #include <net/ip_fib.h>
-#include <net/ecmp.h>
+#include <net/flow.h>
 
-
-char ecmp_alg [] = "hrw";
+char * ecmp_alg [] = "hash-threshold";
 
 extern u8 current_ecmp_alg;
 
@@ -18,27 +18,27 @@ extern u8 current_ecmp_alg;
  * A sysctl table is an array of struct ctl_table:
  * struct ctl_table
  * {
- *         const char *procname;           /* Text ID for /proc/sys, or zero
+ *         const char *procname;          Text ID for /proc/sys, or zero
  *         void *data;
  *         int maxlen;
  *         umode_t mode;
- *         struct ctl_table *child;        /* Deprecated
- *         proc_handler *proc_handler;     /* Callback for text formatting
+ *         struct ctl_table *child;        Deprecated
+ *         proc_handler *proc_handler;     Callback for text formatting
  *         struct ctl_table_poll *poll;
  *         void *extra1;
  *         void *extra2;
  * };
  */
 
-static int proc_ecmp_alg(ctl_table *ctl_tbl, int write,
-                          void __user *buffer, size_t *lenp, loff_t *ppos)
+static inline int proc_ecmp_alg(struct ctl_table *ctl, int write,
+                                void __user * buffer, size_t *lenp, loff_t *ppos)
 {
     int ret, i;
-    strncpy(ctl_tbl->data, ecmp_alg, ctl->maxlen);
-    ret = proc_dosctring(ctl_tbl, write, buffer, lenp, ppos);
+    strncpy(ctl->data, ecmp_alg, ctl->maxlen);
+    ret = proc_dosctring(ctl, write, buffer, lenp, ppos);
 
     if (write && !ret){
-        strncpy(ecmp_alg, ctl_table->data, ctl_tbl->maxlen);
+        strncpy(ecmp_alg, ctl->data, ctl->maxlen);
 
         for (i= ECMP_DISABLED; i < ECMP_ALGS_COUNT; i++){
             current_ecmp_alg = i;
@@ -127,7 +127,7 @@ static inline u32 ecmp_hash(const struct flowi4 *flow)
 }
 
 
-static struct ctl_table net_ipv4_ecmp_alg [] ={
+static struct ctl_table net_ipv4_ecmp_alg [] = {
         {
                 .procname       = "ecmp_alg",
                 .data           = &ecmp_alg,
@@ -139,11 +139,13 @@ static struct ctl_table net_ipv4_ecmp_alg [] ={
 };
 
 
-static u8 ecmp_hash_threshold(u32 * hash, fib_info *fi){
-    return (*hash / (U32_MAX / fi->fib_nhs));
+static inline u8 ecmp_hash_threshold(u32 * hash, struct fib_info *fi)
+{
+    return (u8)(*hash / (U32_MAX / fi->fib_nhs));
 }
 
-static u8 ecmp_hrw(u32 * hash, fib_info * fi){
+static inline u8 ecmp_hrw(u32 * hash, struct fib_info * fi)
+{
 
     u32 best_weight, weight;
     u8 best_link = 0;
@@ -163,11 +165,13 @@ static u8 ecmp_hrw(u32 * hash, fib_info * fi){
     return best_link;
 }
 
-static u8 ecmp_modulo_n(u32 * hash, fib_info *fi){
+static inline u8 ecmp_modulo_n(u32 * hash, struct fib_info *fi)
+{
     return (*hash % fi->fib_nhs);
 }
 
-static u8 ecmp_default(fib_info *fi){
+static inline u8 ecmp_default(struct fib_info *fi)
+{
     u8 w = 0;
     u8 nhsel;
 
@@ -218,7 +222,7 @@ int ecmp_init(void)
 {
     sysctl_table_hdr = register_net_sysctl(&init_net, "net/ipv4",net_ipv4_ecmp_alg);
 
-    if(!sysctl_ecmp_mode_hdr){
+    if(!sysctl_table_hdr){
 
         return -2;
     }
@@ -226,7 +230,8 @@ int ecmp_init(void)
     return 0;
 }
 
-void ecmp_cleanup(void){
+void ecmp_cleanup(void)
+{
     unregister_sysctl_table(sysctl_table_hdr);
 }
 

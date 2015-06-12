@@ -1,4 +1,3 @@
-#include <net/ecmp.h>
 #include <linux/string.h>
 #include <linux/in.h>
 #include <linux/jhash.h>
@@ -6,6 +5,7 @@
 #include <linux/jiffies.h>
 #include <net/ip_fib.h>
 #include <net/flow.h>
+#include <net/ecmp.h>
 
 char ecmp_alg [] = "hash-threshold";
 
@@ -38,12 +38,12 @@ const char *ecmp_algs[ECMP_ALGS_COUNT] = {
  * };
  */
 
-static inline int proc_ecmp_alg(struct ctl_table *ctl, int write,
+static int proc_ecmp_alg(struct ctl_table *ctl, int write,
                                 void __user * buffer, size_t *lenp, loff_t *ppos)
 {
     int ret, i;
     strncpy(ctl->data, ecmp_alg, ctl->maxlen);
-    ret = proc_dosctring(ctl, write, buffer, lenp, ppos);
+    ret = proc_dostring(ctl, write, buffer, lenp, ppos);
 
     if (write && !ret){
         strncpy(ecmp_alg, ctl->data, ctl->maxlen);
@@ -113,7 +113,7 @@ u32 ecmp_hash(const struct flowi4 *flow)
      */
 
     u32 hash;
-    u8 * protocol;
+    u8 * protocol=NULL;
 
     *protocol = flow->flowi4_proto;
     hash = jhash_3words(flow->saddr, flow->daddr, *protocol, 0);

@@ -5,11 +5,19 @@
 #include <linux/sysctl.h>
 #include <linux/jiffies.h>
 #include <net/ip_fib.h>
-
+#include <net/flow.h>
 
 char ecmp_alg [] = "hash-threshold";
 
 extern u8 current_ecmp_alg;
+
+const char *ecmp_algs[ECMP_ALGS_COUNT] = {
+        "disabled",
+        "hash-threshold",
+        "hrw",
+        "modulo-n",
+        "default"
+};
 
 /*
  *

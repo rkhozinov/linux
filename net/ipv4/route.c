@@ -504,42 +504,19 @@ void __ip_select_ident(struct iphdr *iph, int segs)
 }
 EXPORT_SYMBOL(__ip_select_ident);
 
-static void __build_flow_key(struct flowi4 *fl4, const struct sock *sk,
-			     const struct iphdr *iph,
-			     int oif, u8 tos,
-			     u8 prot, u32 mark, int flow_flags)
-{
-	if (sk) {
-		const struct inet_sock *inet = inet_sk(sk);
-
-		oif = sk->sk_bound_dev_if;
-		mark = sk->sk_mark;
-		tos = RT_CONN_FLAGS(sk);
-		prot = inet->hdrincl ? IPPROTO_RAW : sk->sk_protocol;
-	}
-	flowi4_init_output(fl4, oif, mark, tos,
-			   RT_SCOPE_UNIVERSE, prot,
-			   flow_flags,
-			   iph->daddr, iph->saddr, 0, 0);
-
-#ifdef CONFIG_IP_ROUTE_MULTIPATH
-    add_flow_details(fl4,iph);
-#endif
-}
-
 #ifdef CONFIG_IP_ROUTE_MULTIPATH
 /*
  * Fills sport and dport for an IPv4 flow
  */
-static void add_flow_details(struct flowi4 *flow, struct iphdr *ip_header)
+static void __add_flow_details(struct flowi4 *flow, const struct iphdr *ip_header)
 {
-    // http://stackoverflow.com/questions/12073963/\
+    /* http://stackoverflow.com/questions/12073963/\
     // how-to-access-data-payload-from-tcphdr-sk-buff-struct-on-debian-64-bits
 
     // http://stackoverflow.com/questions/16528868/c-linux-kernel-module-tcp-header
-
-    struct tcphdr * tcp_header;
-    struct udphdr * udp_header;
+    */
+    const struct tcphdr * tcp_header;
+    const struct udphdr * udp_header;
 
     flow->flowi4_proto = ip_header->protocol;
     switch (flow->flowi4_proto) {
@@ -567,7 +544,32 @@ static void add_flow_details(struct flowi4 *flow, struct iphdr *ip_header)
             flow->fl4_dport = 0;
             break;
 }
+}
 #endif
+
+static void __build_flow_key(struct flowi4 *fl4, const struct sock *sk,
+			     const struct iphdr *iph,
+			     int oif, u8 tos,
+			     u8 prot, u32 mark, int flow_flags)
+{
+	if (sk) {
+		const struct inet_sock *inet = inet_sk(sk);
+
+		oif = sk->sk_bound_dev_if;
+		mark = sk->sk_mark;
+		tos = RT_CONN_FLAGS(sk);
+		prot = inet->hdrincl ? IPPROTO_RAW : sk->sk_protocol;
+	}
+	flowi4_init_output(fl4, oif, mark, tos,
+			   RT_SCOPE_UNIVERSE, prot,
+			   flow_flags,
+			   iph->daddr, iph->saddr, 0, 0);
+
+	#ifdef CONFIG_IP_ROUTE_MULTIPATH
+    	__add_flow_details(fl4,iph);
+	#endif
+}
+
 
 static void build_skb_flow_key(struct flowi4 *fl4, const struct sk_buff *skb,
 			       const struct sock *sk)

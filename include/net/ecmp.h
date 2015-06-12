@@ -20,19 +20,12 @@ enum {
 
 /* sysctl header */
 struct ctl_table_header * sysctl_table_hdr = NULL;
-EXPORT_SYMBOL_GPL(systcl_table_hdr);
 
 u8 current_ecmp_alg = ECMP_HASH_THRESHOLD;
 EXPORT_SYMBOL_GPL(current_ecmp_alg);
 
 
-const char *ecmp_alg[ECMP_ALGS_COUNT] = {
-        "disabled",
-        "hash-threshold",
-        "hrw",
-        "modulo-n",
-        "default"
-};
+
 
 static inline int proc_ecmp_alg(struct ctl_table *ctl_tbl, int write,
                           void __user * buffer, size_t *lenp, loff_t *ppos);

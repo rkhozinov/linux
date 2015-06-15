@@ -46,6 +46,7 @@
 #include <net/ecmp.h>
 #endif /* CONFIG_IP_ROUTE_MULTIPATH */
 #include "fib_lookup.h"
+
 static DEFINE_SPINLOCK(fib_info_lock);
 static struct hlist_head *fib_info_hash;
 static struct hlist_head *fib_info_laddrhash;
@@ -1287,9 +1288,9 @@ void fib_select_multipath(struct fib_result *res, const struct flowi4 * flow)
 {
 	struct fib_info *fi = res->fi;
     	u8 best_link;
-    	u32 * hash;
+    	u32 * hash = NULL;
     	spin_lock_bh(&fib_multipath_lock);
-	extern u8 current_ecmp_mode;
+	u8 current_ecmp_mode;
 	switch(current_ecmp_mode){
 
 	case ECMP_DISABLED:

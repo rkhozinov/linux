@@ -19,13 +19,11 @@ enum {
 };
 
 /* sysctl header */
-struct ctl_table_header * sysctl_table_hdr = NULL;
+extern struct ctl_table_header * sysctl_table_hdr;
+extern u8 current_ecmp_alg;
 
-u8 current_ecmp_alg = ECMP_HASH_THRESHOLD;
-EXPORT_SYMBOL_GPL(current_ecmp_alg);
-
-//static int proc_ecmp_alg(struct ctl_table *ctl_tbl, int write,
-//                          void __user * buffer, size_t *lenp, loff_t *ppos);
+static int proc_ecmp_alg(struct ctl_table *ctl_tbl, int write,
+                          void __user * buffer, size_t *lenp, loff_t *ppos);
 u32 ecmp_hash(const struct flowi4 *flow);
 u8 ecmp_hash_threshold(u32 * hash, struct fib_info *fi);
 u8 ecmp_hrw(u32 * hash, struct fib_info * fi);

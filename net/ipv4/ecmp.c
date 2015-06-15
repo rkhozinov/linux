@@ -8,8 +8,12 @@
 #include <net/ecmp.h>
 
 char ecmp_alg [] = "hash-threshold";
+		      
+u8 current_ecmp_alg = ECMP_HASH_THRESHOLD;
+EXPORT_SYMBOL_GPL(current_ecmp_alg);
 
-extern u8 current_ecmp_alg;
+struct ctl_table_header * sysctl_table_hdr=NULL;
+EXPORT_SYMBOL_GPL(sysctl_table_hdr);
 
 const char *ecmp_algs[ECMP_ALGS_COUNT] = {
         "disabled",

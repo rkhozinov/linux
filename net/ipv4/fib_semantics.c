@@ -1287,14 +1287,13 @@ int fib_sync_up(struct net_device *dev)
 void fib_select_multipath(struct fib_result *res, const struct flowi4 * flow)
 {
 	struct fib_info *fi = res->fi;
-    	u8 best_link;
+    	u8 best_link = 0;
     	u32 * hash = NULL;
     	spin_lock_bh(&fib_multipath_lock);
 	u8 current_ecmp_mode;
 	switch(current_ecmp_mode){
 
 	case ECMP_DISABLED:
-	    best_link = 0;
 	    break;
 
 	case ECMP_HASH_THRESHOLD:

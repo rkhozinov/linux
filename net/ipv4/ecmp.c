@@ -6,7 +6,6 @@
 #include <net/ip_fib.h>
 #include <net/flow.h>
 #include <net/ecmp.h>
-
 char ecmp_alg [] = "hash-threshold";
 		      
 u8 current_ecmp_alg = ECMP_HASH_THRESHOLD;
@@ -42,7 +41,7 @@ const char *ecmp_algs[ECMP_ALGS_COUNT] = {
  * };
  */
 
-static int proc_ecmp_alg(struct ctl_table *ctl, int write,
+int proc_ecmp_alg(struct ctl_table *ctl, int write,
                                 void __user * buffer, size_t *lenp, loff_t *ppos)
 {
     int ret, i;
@@ -232,14 +231,14 @@ u8 ecmp_default(struct fib_info *fi)
 
 int ecmp_init(void)
 {
-    sysctl_table_hdr = register_net_sysctl(&init_net, "net/ipv4",net_ipv4_ecmp_alg);
+    	sysctl_table_hdr = register_net_sysctl(&init_net, "net/ipv4",net_ipv4_ecmp_alg);
 
-    if(!sysctl_table_hdr){
+    	if(!sysctl_table_hdr){
 
-        return -2;
-    }
+        	return -2;
+    	}
 
-    return 0;
+    	return 0;
 }
 
 void ecmp_cleanup(void)

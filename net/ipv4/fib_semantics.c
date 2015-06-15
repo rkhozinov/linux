@@ -45,7 +45,7 @@
 #ifdef CONFIG_IP_ROUTE_MULTIPATH
 #include <net/ecmp.h>
 #endif /* CONFIG_IP_ROUTE_MULTIPATH */
-
+#include "fib_lookup.h"
 static DEFINE_SPINLOCK(fib_info_lock);
 static struct hlist_head *fib_info_hash;
 static struct hlist_head *fib_info_laddrhash;
